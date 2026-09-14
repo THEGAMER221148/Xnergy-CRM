@@ -14,7 +14,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install -r requirements.txt pip-audit bandit
-      - run: pytest -q
+      - run: python -m pytest -q
       - run: bandit -r app workers -x tests
       - run: pip-audit -r requirements.txt
       - uses: aquasecurity/trivy-action@v0.36.0
