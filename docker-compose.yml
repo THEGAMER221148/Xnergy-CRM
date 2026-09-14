@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: dealos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres-dev-only
+    ports: ["5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+  redis:
+    image: redis:7.4-alpine
+    command: redis-server --appendonly yes
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    command: azurite-blob --blobHost 0.0.0.0
+    ports: ["10000:10000"]
+    volumes: [azuritedata:/data]
+  app:
+    build: .
+    env_file: .env
+    depends_on: [postgres,redis,azurite]
+    ports: ["8000:8000"]
+volumes:
+  pgdata:
+  redisdata:
+  azuritedata:

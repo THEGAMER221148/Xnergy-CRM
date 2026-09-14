@@ -1,0 +1,25 @@
+name: security
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  test-and-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pip-audit bandit
+      - run: pytest -q
+      - run: bandit -r app workers -x tests
+      - run: pip-audit -r requirements.txt
+      - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          exit-code: "1"

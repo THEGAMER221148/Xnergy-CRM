@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Xnergy DealOS Working MVP</title>
+<style>
+:root{--bg:#081019;--p:#0e1824;--p2:#132131;--line:#25364a;--t:#f4f7fb;--m:#9fb0c4;--g:#c9a961;--gr:#42c89a;--r:#ef6b73;--b:#65a8ff}
+*{box-sizing:border-box}body{margin:0;font:14px Inter,system-ui,Arial;background:var(--bg);color:var(--t)}button,input,select{font:inherit}
+.hidden{display:none!important}.login{min-height:100vh;display:grid;place-items:center}.loginbox{width:min(430px,92vw);background:var(--p);border:1px solid var(--line);border-radius:18px;padding:26px}
+h1,h2,h3{margin:0 0 10px}.muted{color:var(--m)}input,select{width:100%;background:#09131d;border:1px solid var(--line);color:#fff;padding:10px 12px;border-radius:9px;margin:7px 0}.btn{border:1px solid var(--line);background:var(--p2);color:#fff;padding:9px 12px;border-radius:9px;cursor:pointer}.primary{background:var(--g);color:#101010;border-color:var(--g);font-weight:750}.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}.side{padding:22px 14px;border-right:1px solid var(--line);background:#09131d}.brand{font-size:18px;font-weight:800;margin:0 8px 22px}.brand small{display:block;color:var(--m);font-size:10px;font-weight:500}.nav button{display:block;width:100%;text-align:left;border:0;background:none;color:var(--m);padding:11px;border-radius:9px;margin:3px 0;cursor:pointer}.nav button.active,.nav button:hover{background:var(--p2);color:#fff}.main{padding:24px;min-width:0}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:var(--p);border:1px solid var(--line);border-radius:13px;padding:15px}.k{font-size:27px;font-weight:850}.label{font-size:11px;color:var(--m);margin-bottom:5px}.view{display:none}.view.active{display:block}table{width:100%;border-collapse:collapse}th,td{padding:10px 8px;border-bottom:1px solid #19293a;text-align:left;vertical-align:top}th{color:var(--m);font-size:11px}.row{cursor:pointer}.row:hover{background:#111f2d}.badge{display:inline-block;padding:3px 7px;border:1px solid #35506c;border-radius:999px;font-size:10px}.green{color:#8be4c4;border-color:#2b6452}.red{color:#ff9da4;border-color:#6b3238}.toolbar{display:flex;gap:8px;margin:12px 0}.toolbar input{max-width:360px;margin:0}.split{display:grid;grid-template-columns:1.1fr .9fr;gap:12px}.panel{min-height:560px}.contact{padding:9px 0;border-bottom:1px solid #1b2a39}.timeline{padding-left:14px;border-left:2px solid #33485e;margin-top:12px}.event{margin:0 0 16px 9px}.event:before{content:"";position:absolute;width:8px;height:8px;border-radius:50%;background:var(--g);margin-left:-14px;margin-top:5px}.event small{color:var(--m)}.access{display:flex;gap:6px;align-items:center}.access select{width:auto;margin:0}.files{margin-top:12px}.file{display:flex;justify-content:space-between;align-items:center;padding:11px;border:1px solid var(--line);border-radius:9px;margin:7px 0}.toast{position:fixed;right:20px;bottom:20px;background:#132131;border:1px solid var(--line);padding:12px 14px;border-radius:10px;display:none}
+@media(max-width:900px){.app{grid-template-columns:78px 1fr}.brand small,.brand span,.nav button span{display:none}.cards{grid-template-columns:1fr 1fr}.split{grid-template-columns:1fr}}
+</style></head>
+<body>
+<div id="login" class="login">
+  <div class="loginbox"><h1>Xnergy DealOS</h1><p class="muted">Working CRM + investor data-room MVP</p>
+  <input id="email" value="admin@xnergy.local" placeholder="Email"><input id="password" type="password" value="XnergyDemo!" placeholder="Password">
+  <button class="btn primary" style="width:100%;margin-top:8px" onclick="login()">Sign in</button>
+  <p class="muted" style="font-size:11px">Local demo credentials are prefilled. Production authentication must be replaced with OIDC/SSO.</p><div id="loginerr" style="color:#ff9da4"></div></div>
+</div>
+
+<div id="app" class="app hidden">
+<aside class="side"><div class="brand"><span>Xnergy DealOS</span><small>Working MVP</small></div>
+<div class="nav">
+<button class="active" data-v="dash">◫ <span>Dashboard</span></button>
+<button data-v="investors">◎ <span>Investor CRM</span></button>
+<button data-v="deals">▦ <span>Deals</span></button>
+<button data-v="room">▣ <span>Data Room</span></button>
+<button data-v="audit">≡ <span>Audit</span></button>
+</div></aside>
+<main class="main">
+<div class="top"><div><h2 id="title">Dashboard</h2><div class="muted" id="me"></div></div><button class="btn" onclick="logout()">Sign out</button></div>
+
+<section id="dash" class="view active"><div class="cards">
+<div class="card"><div class="label">Investor firms</div><div class="k" id="sorg">—</div></div>
+<div class="card"><div class="label">Investor contacts</div><div class="k" id="scontacts">—</div></div>
+<div class="card"><div class="label">Verified contacts</div><div class="k" id="sverified">—</div></div>
+<div class="card"><div class="label">CRM interactions</div><div class="k" id="sinter">—</div></div>
+</div><div class="card" style="margin-top:12px"><h3>Data quality</h3><p>Every investor is modeled as an <b>organization + CRM contact</b>. Generic addresses are retained but flagged separately; portal access can only attach to a CRM contact.</p><p class="muted" id="quality"></p></div></section>
+
+<section id="investors" class="view"><div class="toolbar"><input id="q" placeholder="Search investor firm or domain"><button class="btn" onclick="loadInvestors()">Search</button><button class="btn primary" onclick="newInvestor()">+ Investor</button></div>
+<div class="split"><div class="card panel"><table><thead><tr><th>Investor</th><th>Contacts</th><th>Domain</th></tr></thead><tbody id="invrows"></tbody></table></div>
+<div class="card panel" id="detail"><h3>Select an investor</h3><p class="muted">CRM contacts, deal history and interactions appear here.</p></div></div></section>
+
+<section id="deals" class="view"><div class="card"><h3>Deals</h3><table><thead><tr><th>Deal</th><th>Mandate</th><th>Stage</th><th>Owner</th></tr></thead><tbody id="dealrows"></tbody></table></div><div id="dealpanel" class="card" style="margin-top:12px"><p class="muted">Select a deal to view investor relationships and entitlement levels.</p></div></section>
+
+<section id="room" class="view"><div class="card"><h3>Native Data Room</h3><p class="muted">Upload a file to A2E with a confidentiality level. Investor users only receive files at or below their granted deal-access level.</p>
+<div class="toolbar"><input type="file" id="upfile"><select id="uplevel"><option value="1">Level 1 — Teaser</option><option value="2">Level 2 — NDA</option><option value="3">Level 3 — CIM</option><option value="4">Level 4 — Financials</option><option value="5">Level 5 — Deep diligence</option></select><button class="btn primary" onclick="upload()">Upload</button></div>
+<div id="files" class="files"></div></div></section>
+
+<section id="audit" class="view"><div class="card"><h3>Audit events</h3><table><thead><tr><th>Time</th><th>Event</th><th>Object</th><th>Detail</th></tr></thead><tbody id="auditrows"></tbody></table></div></section>
+</main></div><div id="toast" class="toast"></div>
+<script>
+const api=async(url,opt={})=>{let r=await fetch(url,opt);if(r.status===401){showLogin();throw Error("login")};if(!r.ok)throw Error(await r.text());let ct=r.headers.get("content-type")||"";return ct.includes("json")?r.json():r};
+function toast(x){let t=document.getElementById("toast");t.textContent=x;t.style.display="block";setTimeout(()=>t.style.display="none",2400)}
+async function login(){try{await api("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:email.value,password:password.value})});await boot()}catch(e){loginerr.textContent="Sign-in failed"}}
+async function logout(){await api("/api/logout",{method:"POST"});showLogin()}
+function showLogin(){login.classList.remove("hidden");app.classList.add("hidden")}
+async function boot(){let u=await api("/api/me");login.classList.add("hidden");app.classList.remove("hidden");me.textContent=u.display_name+" · "+u.role;await stats();await loadInvestors();await loadDeals();await loadAudit()}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".view").forEach(x=>x.classList.remove("active"));document.getElementById(b.dataset.v).classList.add("active");title.textContent=b.textContent.trim();if(b.dataset.v==="room")loadFiles()})
+async function stats(){let s=await api("/api/stats");sorg.textContent=s.investor_orgs;scontacts.textContent=s.investor_contacts;sverified.textContent=s.verified_contacts;sinter.textContent=s.interactions;quality.textContent=s.generic_contacts+" generic/shared inbox contacts are flagged for verification."}
+async function loadInvestors(){let a=await api("/api/investors?q="+encodeURIComponent(q.value||""));invrows.innerHTML=a.map(x=>`<tr class="row" onclick="detailInvestor('${x.id}')"><td><b>${esc(x.name)}</b></td><td>${x.contact_count}</td><td class="muted">${esc(x.domain||"")}</td></tr>`).join("")}
+async function detailInvestor(id){let x=await api("/api/investors/"+id),o=x.organization;detail.innerHTML=`<h3>${esc(o.name)}</h3><p class="muted">${esc(o.domain||"No domain")} · ${esc(o.relationship_status||"prospect")}</p><h3>Contacts</h3>${x.contacts.map(c=>`<div class="contact"><b>${esc(c.name||c.email)}</b> ${c.verified?'<span class="badge green">verified</span>':''} ${c.generic_email?'<span class="badge red">generic</span>':''}<br><span class="muted">${esc(c.title||"")} · ${esc(c.email)}</span></div>`).join("")}<h3 style="margin-top:16px">Deal history</h3>${x.deals.map(d=>`<div class="contact"><b>${esc(d.deal_name)}</b> · ${esc(d.status)} · NDA ${esc(d.nda_status)} · access L${d.access_level}</div>`).join("")||'<p class="muted">No deal history</p>'}<h3 style="margin-top:16px">Interactions</h3><div class="timeline">${x.interactions.slice(0,12).map(i=>`<div class="event"><b>${esc(i.interaction_type)}</b><br><small>${esc(i.deal_name||"")} ${esc(i.created_at||"")}</small><div>${esc((i.summary||"").slice(0,420))}</div></div>`).join("")}</div>`}
+async function newInvestor(){let name=prompt("Investor organization name");if(!name)return;let domain=prompt("Domain (optional)")||"";await api("/api/investors",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,domain})});toast("Investor added to CRM");await stats();await loadInvestors()}
+let deals=[];
+async function loadDeals(){deals=await api("/api/deals");dealrows.innerHTML=deals.map(d=>`<tr class="row" onclick="openDeal('${d.id}')"><td><b>${esc(d.name)}</b></td><td>${esc(d.mandate_type)}</td><td><span class="badge">${esc(d.stage)}</span></td><td>${esc(d.owner||"")}</td></tr>`).join("")}
+async function openDeal(id){let rows=await api("/api/deals/"+id+"/investors");let d=deals.find(x=>x.id===id);dealpanel.innerHTML=`<h3>${esc(d.name)} — Investor CRM links</h3><table><thead><tr><th>Investor</th><th>Status</th><th>NDA</th><th>Contacts</th><th>Access</th></tr></thead><tbody>${rows.slice(0,250).map(x=>`<tr><td>${esc(x.organization_name)}</td><td>${esc(x.status)}</td><td>${esc(x.nda_status)}</td><td>${x.contact_count}</td><td><div class="access"><select onchange="setAccess('${id}','${x.organization_id}',this.value)">${[0,1,2,3,4,5].map(n=>`<option ${n==x.access_level?'selected':''}>${n}</option>`).join("")}</select></div></td></tr>`).join("")}</tbody></table>`}
+async function setAccess(deal,org,level){await api(`/api/deals/${deal}/investors/${org}/access`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({access_level:+level})});toast("Deal access updated");loadAudit()}
+async function loadFiles(){if(!deals.length)await loadDeals();let d=deals[0];if(!d)return;let a=await api(`/api/deals/${d.id}/documents`);files.innerHTML=a.map(x=>`<div class="file"><div><b>${esc(x.filename)}</b><div class="muted">Level ${x.confidentiality_level} · ${Math.round((x.size_bytes||0)/1024)} KB</div></div><a class="btn" href="/api/documents/${x.id}/download">Download</a></div>`).join("")||'<p class="muted">No documents uploaded yet.</p>'}
+async function upload(){let f=upfile.files[0];if(!f){toast("Choose a file");return}let d=deals[0];let fd=new FormData();fd.append("file",f);fd.append("level",uplevel.value);fd.append("watermark","0");await api(`/api/deals/${d.id}/documents`,{method:"POST",body:fd});toast("Document stored in native data room");upfile.value="";loadFiles();loadAudit()}
+async function loadAudit(){try{let a=await api("/api/audit");auditrows.innerHTML=a.map(x=>`<tr><td>${esc(x.created_at)}</td><td>${esc(x.event_type)}</td><td>${esc(x.object_type||"")}</td><td>${esc(x.detail||"")}</td></tr>`).join("")}catch(e){}}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+fetch("/api/me").then(r=>r.ok?boot():showLogin()).catch(showLogin)
+</script></body></html>

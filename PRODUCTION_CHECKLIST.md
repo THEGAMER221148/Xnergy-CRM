@@ -1,0 +1,25 @@
+# Go-live checklist
+
+- [ ] Production domain + TLS certificate
+- [ ] Entra app registration configured; redirect URIs restricted
+- [ ] MFA / Conditional Access policy enforced
+- [ ] Investor accounts invitation/pre-provisioning tested
+- [ ] Runtime DB role verified NOBYPASSRLS and non-owner
+- [ ] Cross-tenant RLS automated negative tests pass
+- [ ] PostgreSQL private networking and public access disabled
+- [ ] Redis private networking configured
+- [ ] Storage public access and shared keys disabled
+- [ ] Managed identity used for Blob + Service Bus
+- [ ] Defender for Storage on-upload scanning enabled
+- [ ] Defender results routed to Service Bus
+- [ ] EICAR test proves pending -> malicious and no download
+- [ ] Clean-file test proves pending -> clean -> authorized download
+- [ ] WAF / DDoS / edge rate rules configured
+- [ ] Key Vault secret rotation procedure tested
+- [ ] PostgreSQL point-in-time restore tested
+- [ ] Blob deleted-version recovery tested
+- [ ] Log Analytics/SIEM alerts configured
+- [ ] Dependency/SAST/container/IaC scans green
+- [ ] Independent penetration test completed
+- [ ] Incident response tabletop completed
+- [ ] Compliance/legal review completed
