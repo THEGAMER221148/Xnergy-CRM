@@ -17,7 +17,7 @@ jobs:
       - run: pytest -q
       - run: bandit -r app workers -x tests
       - run: pip-audit -r requirements.txt
-      - uses: aquasecurity/trivy-action@0.36.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
