@@ -18,9 +18,8 @@ async def init_storage():
         try: await _service.create_container(name)
         except Exception as e:
             # ResourceExists is intentionally ignored; other errors will surface on actual storage access.
-            if "ContainerAlreadyExists" not in str(e) and "container already exists" not in str(e).lower():
-                pass
-
+         if "ContainerAlreadyExists" not in str(e) and "container already exists" not in str(e).lower():
+    raise
 async def close_storage():
     global _service,_credential
     if _service: await _service.close()
