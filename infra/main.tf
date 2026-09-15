@@ -109,7 +109,6 @@ resource "azurerm_container_registry" "acr" {
   sku                    = "Standard"
   admin_enabled          = false
   anonymous_pull_enabled = false
-  role_assignment_mode   = "LegacyRegistryPermissions"
 
   tags = local.tags
 }
