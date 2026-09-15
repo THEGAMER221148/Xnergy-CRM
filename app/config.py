@@ -1,13 +1,29 @@
 from functools import lru_cache
+
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator, model_validator
+
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        extra="ignore",
+        case_sensitive=False,
+    )
+
     app_env: str = "development"
     app_base_url: str = "http://127.0.0.1:8000"
-    database_url: str = "postgresql://dealos_app:devpass@localhost:5432/dealos"
+
+    database_url: str = (
+        "postgresql://dealos_app:devpass@localhost:5432/dealos"
+    )
+
+    # Local development Redis.
+    # Production ignores this and uses Azure Managed Redis with Entra ID.
     redis_url: str = "redis://localhost:6379/0"
+
+    # Azure Managed Redis hostname used in production.
+    azure_redis_host: str = ""
 
     oidc_issuer: str = ""
     oidc_client_id: str = ""
@@ -33,27 +49,55 @@ class Settings(BaseSettings):
     azure_servicebus_fqdn: str = ""
     azure_servicebus_connection_string: str = ""
     malware_scan_queue: str = "dealos-malware-results"
+
     key_vault_url: str = ""
 
     @model_validator(mode="after")
     def production_safety(self):
         if self.app_env.lower() == "production":
             if self.dev_auth_bypass:
-                raise ValueError("DEV_AUTH_BYPASS must be false in production")
+                raise ValueError(
+                    "DEV_AUTH_BYPASS must be false in production"
+                )
+
             if not self.cookie_secure:
-                raise ValueError("COOKIE_SECURE must be true in production")
+                raise ValueError(
+                    "COOKIE_SECURE must be true in production"
+                )
+
             needed = {
+                "APP_BASE_URL": self.app_base_url,
+                "DATABASE_URL": self.database_url,
+                "AZURE_REDIS_HOST": self.azure_redis_host,
                 "OIDC_ISSUER": self.oidc_issuer,
                 "OIDC_CLIENT_ID": self.oidc_client_id,
                 "OIDC_CLIENT_SECRET": self.oidc_client_secret,
-                "AZURE_STORAGE_ACCOUNT_URL": self.azure_storage_account_url,
+                "AZURE_STORAGE_ACCOUNT_URL":
+                    self.azure_storage_account_url,
+                "AZURE_SERVICEBUS_FQDN":
+                    self.azure_servicebus_fqdn,
             }
-            missing = [k for k,v in needed.items() if not v]
+
+            missing = [
+                name
+                for name, value in needed.items()
+                if not value
+            ]
+
             if missing:
-                raise ValueError("Missing production settings: " + ", ".join(missing))
+                raise ValueError(
+                    "Missing production settings: "
+                    + ", ".join(missing)
+                )
+
             if not self.malware_scan_required:
-                raise ValueError("MALWARE_SCAN_REQUIRED must remain true in production")
+                raise ValueError(
+                    "MALWARE_SCAN_REQUIRED must remain true "
+                    "in production"
+                )
+
         return self
+
 
 @lru_cache
 def get_settings() -> Settings:
