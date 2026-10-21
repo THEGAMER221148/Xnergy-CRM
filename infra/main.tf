@@ -66,6 +66,7 @@ resource "azurerm_subnet" "postgres" {
   resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = ["10.40.8.0/24"]
+  service_endpoints    = ["Microsoft.Storage"]
 
   delegation {
     name = "postgres"
@@ -158,8 +159,9 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
 
   version = "17"
 
-  delegated_subnet_id = azurerm_subnet.postgres.id
-  private_dns_zone_id = azurerm_private_dns_zone.postgres.id
+  delegated_subnet_id           = azurerm_subnet.postgres.id
+  private_dns_zone_id           = azurerm_private_dns_zone.postgres.id
+  public_network_access_enabled = false
 
   administrator_login    = var.postgres_admin
   administrator_password = var.postgres_admin_password
@@ -173,13 +175,13 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
   storage_mb = 131072
 
   backup_retention_days        = 35
-  geo_redundant_backup_enabled = true
+  geo_redundant_backup_enabled = false
 
   zone = "1"
 
   high_availability {
-    mode                      = "ZoneRedundant"
-    standby_availability_zone = "2"
+    mode                      = "SameZone"
+    standby_availability_zone = "1"
   }
 
   depends_on = [
@@ -187,6 +189,12 @@ resource "azurerm_postgresql_flexible_server" "postgres" {
   ]
 
   tags = local.tags
+}
+
+resource "azurerm_postgresql_flexible_server_configuration" "extensions" {
+  name      = "azure.extensions"
+  server_id = azurerm_postgresql_flexible_server.postgres.id
+  value     = "CITEXT,PGCRYPTO"
 }
 
 resource "azurerm_postgresql_flexible_server_database" "dealos" {
@@ -286,7 +294,7 @@ resource "azurerm_role_assignment" "app_blob_data" {
 
 resource "azurerm_servicebus_namespace" "servicebus" {
   name = substr(
-    "${local.name}-${local.unique_suffix}-sb",
+    "${local.name}-${local.unique_suffix}-bus",
     0,
     50
   )
@@ -294,8 +302,9 @@ resource "azurerm_servicebus_namespace" "servicebus" {
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
 
-  sku      = "Premium"
-  capacity = 1
+  sku                          = "Premium"
+  capacity                     = 1
+  premium_messaging_partitions = 1
 
   tags = local.tags
 }
@@ -342,8 +351,16 @@ resource "azurerm_container_app_environment" "environment" {
   location            = data.azurerm_resource_group.rg.location
   resource_group_name = data.azurerm_resource_group.rg.name
 
-  log_analytics_workspace_id = azurerm_log_analytics_workspace.logs.id
-  infrastructure_subnet_id   = azurerm_subnet.apps.id
+  log_analytics_workspace_id         = azurerm_log_analytics_workspace.logs.id
+  infrastructure_subnet_id           = azurerm_subnet.apps.id
+  infrastructure_resource_group_name = "ME_${local.name}-cae_${data.azurerm_resource_group.rg.name}_${data.azurerm_resource_group.rg.location}"
+
+  workload_profile {
+    name                  = "Consumption"
+    workload_profile_type = "Consumption"
+    minimum_count         = 0
+    maximum_count         = 0
+  }
 
   tags = local.tags
 }
@@ -364,7 +381,8 @@ resource "azurerm_container_app" "api" {
   container_app_environment_id = azurerm_container_app_environment.environment.id
   resource_group_name          = data.azurerm_resource_group.rg.name
 
-  revision_mode = "Single"
+  revision_mode         = "Single"
+  workload_profile_name = "Consumption"
 
   identity {
     type = "UserAssigned"
@@ -399,6 +417,24 @@ resource "azurerm_container_app" "api" {
       image  = var.container_image
       cpu    = 1.0
       memory = "2Gi"
+
+      startup_probe {
+        transport               = "TCP"
+        port                    = 8000
+        interval_seconds        = 10
+        timeout                 = 3
+        failure_count_threshold = 30
+      }
+
+      readiness_probe {
+        transport               = "HTTP"
+        port                    = 8000
+        path                    = "/readyz"
+        interval_seconds        = 30
+        timeout                 = 15
+        success_count_threshold = 1
+        failure_count_threshold = 3
+      }
 
       env {
         name  = "APP_ENV"

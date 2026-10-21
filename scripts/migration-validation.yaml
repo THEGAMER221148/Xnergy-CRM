@@ -1,0 +1,13 @@
+version: v1.1.0
+steps:
+  - id: build-migration
+    build: -t $Registry/dealos-migration:bootstrap-$ID -f Dockerfile.migration .
+  - id: migration-test-db
+    cmd: postgres:17
+    env:
+      - POSTGRES_PASSWORD=temporary-test-only
+    detach: true
+  - id: test-migration
+    cmd: $Registry/dealos-migration:bootstrap-$ID python /workspace/scripts/verify_migration_integration.py
+  - push:
+      - $Registry/dealos-migration:bootstrap-$ID

@@ -1,0 +1,16 @@
+/* Official Xnergy palette: xnergy.com Elementor brand settings, September 22, 2026. */
+:root{--xnergy-light-blue:#92b2cd;--xnergy-blue:#40729d;--nav:#fff;--blue:#40729d;--b:#40729d;--gold:#40729d;--g:#e5eef5;--bg:#f5f8fb;--ink:#182b3f;--t:#182b3f;--line:#d6e2ed}
+aside,.side{background:#fff!important;color:#182b3f!important;border-right:1px solid #d6e2ed!important}
+.brand{padding:0 12px!important;letter-spacing:normal!important}
+.brand img{display:block;width:160px;max-width:100%;height:auto;object-fit:contain}
+.brand small{display:block!important;margin-top:12px!important;color:#40729d!important;font-size:11px!important;font-weight:650;letter-spacing:2.5px!important}
+.nav a,.nav button{color:#345b7c!important}
+.nav a:hover,.nav button:hover{background:#edf3f8!important;color:#234967!important}
+.nav a.active,.nav button.active,.nav .active{background:#e5eef5!important;color:#234967!important;border-left:3px solid #92b2cd!important}
+.bottom,.nav-footer{color:#526b7e!important}
+.btn.primary,button.primary,a.primary,.primary{background:#40729d!important;border-color:#40729d!important;color:#fff!important}
+.btn.primary:hover,button.primary:hover,a.primary:hover{background:#315a7c!important;border-color:#315a7c!important}
+.btn:hover{border-color:#92b2cd}.eyebrow{color:#40729d!important}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #40729d;outline-offset:3px}
+input[type=checkbox],input[type=radio]{accent-color:#40729d}
+@media(max-width:600px){.brand img{width:130px}}

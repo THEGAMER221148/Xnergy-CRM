@@ -52,6 +52,12 @@ class Settings(BaseSettings):
 
     key_vault_url: str = ""
 
+    workspace_directory_tenant_id: str = ""
+
+    ai_intake_enabled: bool = False
+    azure_openai_endpoint: str = ""
+    azure_openai_deployment: str = ""
+
     @model_validator(mode="after")
     def production_safety(self):
         if self.app_env.lower() == "production":

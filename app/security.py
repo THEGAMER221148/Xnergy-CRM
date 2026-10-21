@@ -3,7 +3,9 @@ import hashlib
 import json
 import secrets
 import time
-from urllib.parse import urlencode
+import re
+from uuid import UUID
+from urllib.parse import urlencode, unquote
 
 import httpx
 import jwt
@@ -103,7 +105,7 @@ def _challenge(verifier: str) -> str:
     return base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
 
 
-async def oidc_login(next_path: str = "/"):
+async def oidc_login(next_path: str = "/", calendar_user=None):
     s = get_settings()
     oidc_discovery = await discovery()
 
@@ -114,7 +116,7 @@ async def oidc_login(next_path: str = "/"):
     payload = {
         "nonce": nonce,
         "verifier": verifier,
-        "next": next_path,
+        "next": safe_next_path(next_path),
         "created": int(time.time()),
     }
 
@@ -124,11 +126,15 @@ async def oidc_login(next_path: str = "/"):
         json.dumps(payload),
     )
 
+    if calendar_user:
+        payload["calendar_user"] = calendar_user
+        await _redis().setex(f"oidc:{state}",600,json.dumps(payload))
+
     params = {
         "client_id": s.oidc_client_id,
         "response_type": "code",
         "redirect_uri": s.app_base_url.rstrip("/") + "/auth/callback",
-        "scope": s.oidc_scopes,
+        "scope": calendar_user.get("scopes", "openid profile email offline_access https://graph.microsoft.com/Calendars.ReadBasic") if calendar_user else s.oidc_scopes,
         "state": state,
         "nonce": nonce,
         "code_challenge": _challenge(verifier),
@@ -215,7 +221,56 @@ async def oidc_callback(code: str, state: str):
     if claims.get("nonce") != state_data["nonce"]:
         raise HTTPException(401, "OIDC nonce mismatch")
 
+    if state_data.get("calendar_user"):
+        claims["_calendar_connection"] = {"user": state_data["calendar_user"], "tokens": token_response}
     return claims, state_data["next"]
+
+
+def safe_next_path(path: str) -> str:
+    """Only local absolute paths; reject browser-normalized external redirects."""
+    decoded = unquote(path)
+    if (not decoded.startswith("/") or decoded.startswith("//")
+            or "\\" in decoded or any(ord(c) < 32 or ord(c) == 127 for c in decoded)):
+        return "/"
+    return path
+
+
+def identity_key(claims):
+    """Map verified Entra claims to the stable directory ID used in provisioning."""
+    issuer, subject = claims.get("iss"), claims.get("sub")
+    if not isinstance(issuer, str) or not issuer or not isinstance(subject, str) or not subject:
+        raise HTTPException(403, "Account is not provisioned in DealOS")
+    match = re.fullmatch(r"https://login\.microsoftonline\.com/([0-9a-fA-F-]{36})/v2\.0", issuer)
+    if match:
+        try:
+            tenant = UUID(match.group(1))
+            if UUID(claims.get("tid", "")) != tenant:
+                raise ValueError("Tenant mismatch")
+            subject = "entra-oid:" + str(UUID(claims.get("oid", "")))
+        except (ValueError, TypeError, AttributeError):
+            raise HTTPException(403, "Account is not provisioned in DealOS")
+    return issuer, subject
+
+
+async def resolve_identity(connection, claims):
+    """Resolve only an administrator-provisioned, verified issuer/subject pair.
+
+    The SELECT-only identity policy exposes this user's row during this
+    transaction. Claim context is discarded before the connection is reused.
+    Email claims never create or relink an account.
+    """
+    issuer, subject = identity_key(claims)
+    async with connection.transaction():
+        await connection.execute("select set_config('app.auth_issuer',$1,true)", issuer)
+        await connection.execute("select set_config('app.auth_subject',$1,true)", subject)
+        row = await connection.fetchrow("""select u.* from auth_identities a
+            join users u on u.id=a.user_id
+            where a.issuer=$1 and a.subject=$2 and u.active=true""", issuer, subject)
+        if not row:
+            raise HTTPException(403, "Account is not provisioned in DealOS")
+        await connection.execute("""update auth_identities set last_login_at=now()
+            where issuer=$1 and subject=$2""", issuer, subject)
+        return row
 
 
 async def create_session(user: dict):

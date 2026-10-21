@@ -1,0 +1,4 @@
+FROM dealosstagingzk998acr.azurecr.io/dealos@sha256:4fdf72fbbb747abcd5b0e94a0a6e18a9b9d0c2c842d6d736b31a0e8e1169cfa4
+COPY --chown=app:app sql/001_schema.sql sql/002_roles.sql /app/sql/
+COPY --chown=app:app scripts/migrate.py /app/scripts/migrate.py
+CMD ["python", "/app/scripts/migrate.py"]
